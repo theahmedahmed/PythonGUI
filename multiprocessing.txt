@@ -1,0 +1,38 @@
+from LiDAR_prep import calculate_ranges
+from OverallProgressBar import OverallProgressBar
+from queue import Queue
+from multiprocessing import Process, Array, cpu_count
+import pandas as pd
+import glob
+import sys
+import time
+import threading
+
+if __name__ == "__main__":
+    if len(sys.argv) == 1:
+        noOfProcesses = cpu_count()
+        path = "C:/Users/ahmed/Documents/GUI-Project/2019-02-08-16-47-45_Velodyne-VLP-16-Datametroleft1001_1718/*.csv"
+        pospath = "C:/Users/ahmed/Documents/GUI-Project/Apxfeb8_new_inter1.csv"
+        processLevel = 10
+    else:
+        noOfProcesses = int(sys.argv[1])
+        path = sys.argv[2] + "/*.csv"
+        pospath = sys.argv[3]
+        processLevel = int(sys.argv[4])
+
+    t1 = time.perf_counter()
+
+    if len(glob.glob(path)) < cpu_count():
+        noOfProcesses = len(glob.glob(path))
+    arr = Array('d', noOfProcesses)
+    processes = []
+    input_ranges = calculate_ranges(noOfProcesses, path)
+    for i in range(noOfProcesses):
+        p = Process(target=dat_matching_range, args=(input_ranges[i], path, arr, pospath, processLevel))
+        p.start()
+        processes.append(p)
+    for process in processes:
+        process.join()
+
+    t2 = time.perf_counter()
+    print(f'Finished in {round(t2 - t1, 2)} second(s)')
